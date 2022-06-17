@@ -2,16 +2,17 @@
 import numpy as np
 import pandas as pd
 
-data = pd.read_csv('/content/drive/MyDrive/Colab Notebooks/cl_thyroid_conditions.csv')
+# Read dataset
+data = pd.read_csv('cl_thyroid_conditions.csv')
 
+# Converting class label to binary
 data["target_sick"] = data["target_sick"].astype('category')
 data["target_sick_bin"] = data["target_sick"].cat.codes
 data["sex=M"] = data["sex=M"].astype(float)
 
+# Assign input and output
 X = np.array(data.drop(['target_sick', 'target_sick_bin'], axis=1), dtype=float).T
 y = np.array(np.split(data['target_sick_bin'], len(data['target_sick_bin'])), dtype=float).T
-
-# Define useful functions    
 
 # Activation function
 def sigmoid(t):
