@@ -1,61 +1,78 @@
-# Imports
+# imports
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error
 
-# Read dataset
-data = pd.read_csv('cl_thyroid_conditions.csv')
+# read dataset
+data = pd.read_csv('/content/drive/MyDrive/Colab Notebooks/cl_thyroid_conditions_2_normalized.csv')
 
-# Converting class label to binary
+# change class label to binary
 data["target_sick"] = data["target_sick"].astype('category')
 data["target_sick_bin"] = data["target_sick"].cat.codes
 data["sex=M"] = data["sex=M"].astype(float)
 
-# Assign input and output
-X = np.array(data.drop(['target_sick', 'target_sick_bin'], axis=1), dtype=float).T
-y = np.array(np.split(data['target_sick_bin'], len(data['target_sick_bin'])), dtype=float).T
+# suffle data
+cl_data = np.array(data.drop(['target_sick'], axis=1), dtype = float)
+m, n = cl_data.shape
+np.random.shuffle(cl_data)                          # shuffle data
 
-# Activation function
-def sigmoid(t):
-    return 1/(1+np.exp(-t))
+persentage_split = 80/100                           # percentage split
 
-# Derivative of sigmoid
-def sigmoid_derivative(p):
-    return p * (1 - p)
+# assign input and output
+train_data = cl_data[0: int(m*persentage_split)].T  # split data for training
+X_train = train_data[0:-1].T                        # get input train data
+Y_train = np.expand_dims(train_data[-1], axis=-1)   # get output train data
+row, col = train_data.shape
 
-# Class definition
+#X_test = 
+#Y_test = 
+
+# activation function
+def sigmoid(s):                                     # Get Zj and Yk
+    return 1 / (1 + np.exp(-s))
+
+# derivative of sigmoid
+def sigmoid_derivative(sd):                         # Get dk and dj
+    return sd * (1 - sd)
+
+# class definition
 class NeuralNetwork:
-    def __init__(self, x,y):
-        self.input = x
-        self.weights1= np.random.rand(516,7) # considering we have 4 nodes in the hidden layer
-        self.weights2 = np.random.rand(7,516)
-        self.y = y
-        self.output = np.zeros(y.shape)
+    def __init__(self, X_train, Y_train, alpha):
+        self.input   = X_train                      # input
+        self.output  = Y_train                      # output
+        #self.alpha   = alpha                       # learning rate
+        self.W1      = np.random.rand(row-1, 10)    # 10 nodes in hidden layer
+        self.W2      = np.random.rand(10, 1)        # 1 node in output layer 
         
     def feedforward(self):
-        self.layer1 = sigmoid(np.dot(self.input, self.weights1))
-        self.layer2 = sigmoid(np.dot(self.layer1, self.weights2))
-        return self.layer2
-        
+        self.Z1 = sigmoid(self.input.dot(self.W1))  # input-to-hidden - step 4 
+        self.Z2 = sigmoid(self.Z1.dot(self.W2))     # hidden-to-output - step 5
+        return self.Z1, self.Z2
+
     def backprop(self):
-        d_weights2 = np.dot(self.layer1.T, (self.y - self.output)*sigmoid_derivative(self.output))
-        d_weights1 = np.dot(self.input.T, np.dot((self.y -self.output)*sigmoid_derivative(self.output), self.weights2.T)*sigmoid_derivative(self.layer1))
+        error_rate = (self.output - self.Z2)                   # error in hidden-to-output
+        self.dZ1 = error_rate * sigmoid_derivative(self.Z2)  
+        self.dZ2_in = self.dZ1.dot(self.W2.T)                  # how much our hidden layer weights contribute to output error
+        self.dZ2 = self.dZ2_in * sigmoid_derivative(self.Z1)   # applying derivative of sigmoid to z2 error
+
+    def update_param(self):
+        self.W1 += np.dot(self.input.T, self.dZ2)   # updating input-hidden weights
+        self.W2 += np.dot(self.Z1.T, self.dZ1)      # updating hidden-output weights
     
-        self.weights1 += d_weights1
-        self.weights2 += d_weights2
-
-    def train(self, X, y):
-        self.output = self.feedforward()
+    def train(self, X_train, Y_train):
+        self.target = self.feedforward()
         self.backprop()
-        
+        self.update_param()
 
-NN = NeuralNetwork(X,y)
-for i in range(100): # trains the NN 1,000 times
-        print ("for iteration # " + str(i) + "\n")
-        #print ("Input : \n" + str(X))
-        #print ("Actual Output: \n" + str(y))
-        #print ("Predicted Output: \n" + str(NN.feedforward()))
-        print ("Loss: \n" + str(np.mean(np.square(y - NN.feedforward())))) # mean sum squared loss
-        print ("Percentage: \n" + str(100 - (np.mean(np.square(y - NN.feedforward()))).astype(float))) # mean sum squared loss
-        print ("\n")
-  
-NN.train(X, y)
+def __MAIN__(X_train, Y_train, alpha, iterations):
+    NN = NeuralNetwork(X_train, Y_train, alpha)
+    for i in range(iterations):
+        if (i % 10 == 0):
+            Z1, Z2 = NN.feedforward()
+            print("Iteration: ", i)
+            print("Accuarcy:", np.sum(Z2 == Y_train) / Y_train.size)
+            print("Loss: ", str(mean_squared_error(Y_train, Z2)))
+            print("\n")
+    NN.train(X_train, Y_train)
+
+__MAIN__(X_train, Y_train, 0.1, 100)
