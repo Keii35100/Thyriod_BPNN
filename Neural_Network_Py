@@ -79,8 +79,9 @@ def __MAIN__(X_train, Y_train, alpha, iterations):
         if (i % 10 == 0):
             Z1, Z2 = NN.feedforward()
             print("Iteration: ", i)
-            print(get_accuracy(get_predictions(Z2), Y_train))
+            print("Accuarcy:", get_accuracy(get_predictions(Z2), Y_train))
             print("Loss: " + str(np.mean(np.square(Y_train - Z2))))
+            print("\n")
     NN.train(X_train, Y_train)
 
 __MAIN__(X_train, Y_train, 0.1, 100)
