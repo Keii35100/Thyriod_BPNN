@@ -1,3 +1,3 @@
 # Thyriod_BPNN
 
-This project focused on train dataset using BackPropagation Neutral Networm.
+This project focused to train thyroid dataset using BackPropagation Neutral Networm.
